@@ -6,27 +6,29 @@
 #include <stdlib.h>
 static void sighandler(int signo){
   if (signo == SIGUSR1){
-    printf("My PID: %d \n", getpid());
+    printf("My Parent PID: %d \n", getppid());
   }
   if (signo == SIGINT){
-    printf("Worked");
 
-    int crash = open("status.txt", O_WRONLY||O_RDONLY);
+    int crash = open("status.txt", O_CREAT|O_RDWR, 0777);
+    
     if (crash < 0){
-      perror("ERROR");
+      perror("ERROR with status.txt");
       return;
     }
-    int stats = write(crash, "You're program was terminated. \n",35);
-    exit(1);
+    lseek(crash,0,SEEK_END);
+    int stats = write(crash,"SIGINT Program Terminated.\n",27);
+    close(crash);
+    exit(0);
 
   }
 }
 
 int main(){
+   signal(SIGUSR1,sighandler);
+   signal(SIGINT,sighandler);
   while(1){
     printf("I am currently running: %d \n", getpid());
-    signal(SIGUSR1,sighandler);
-    signal(SIGINT,sighandler);
     kill(getpid(),SIGUSR1);
     sleep(1);
   }
